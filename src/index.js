@@ -35,6 +35,32 @@ function truthFilter(program, result) {
   return result;
 }
 
+// TRUTH OVER VERDICT — Steve's order 2026-10-08 ~11:21 EDT.
+// The optimization is continuity, truth, integrity — not speed. The verdict
+// is not the end point; the consequences are. When the truth filter stripped
+// anything or a step ran degraded, that overrides a clean verdict. The
+// pipeline reports what holds, not just what passed.
+function truthAssessment(pipeline) {
+  const stripped = [];
+  let degraded = false;
+  for (const step of pipeline.steps) {
+    const out = step.output || {};
+    if (Array.isArray(out.truth_filtered)) {
+      for (const f of out.truth_filtered) stripped.push(step.program + ': ' + f);
+    }
+    if (step.program === 'sense' && out.status === 'sensed_basic') degraded = true;
+  }
+  const clean = stripped.length === 0 && !degraded;
+  return {
+    holds: clean,
+    stripped: stripped,
+    degraded: degraded,
+    consequence: clean
+      ? 'Chain intact — verdicts stand on verified outputs.'
+      : 'Outputs filtered or degraded upstream — verdicts below do not stand alone.'
+  };
+}
+
 // --- Health ---
 app.get('/health', (req, res) => {
   res.json({ status: 'alive', programs: ['sense', 'shape', 'prove'], version: '0.2.0' });
@@ -124,6 +150,7 @@ app.post('/conduct', async (req, res) => {
     pipeline.steps.push({ program: 'prove', status: proveResult.status || 'error', output: truthFilter('prove', proveResult) });
 
     pipeline.status = 'complete';
+    pipeline.truth = truthAssessment(pipeline);
     res.json(pipeline);
   } catch (e) {
     pipeline.status = 'failed';
