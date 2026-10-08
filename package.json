@@ -1,0 +1,1 @@
+{"dependencies":{"express":"^4.18.2"},"description":"Atlas as an API — the conductor for the three Lazarus programs. Free for everyone.","main":"src/index.js","name":"atlas-api","scripts":{"start":"node src/index.js","test":"node tests/run.js"},"version":"0.1.0"}
