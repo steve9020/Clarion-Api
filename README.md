@@ -2,6 +2,12 @@
 
 The conductor for the three Lazarus programs. Free for everyone.
 
+## Live Demo
+
+See it working: https://muse.ai/s/clarion-net-live-demo-sxt6pdvvxucaq
+
+Interactive walkthrough of Sense, Shape, Prove — plus the resident Pass, Heal, Hold gate.
+
 ## Programs
 
 | Endpoint | Program | Language | Does what |
