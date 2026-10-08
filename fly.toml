@@ -1,5 +1,5 @@
 # fly.toml — Atlas API on Fly.io
-app = "atlas-api-withered-dew-6280"
+app = "clarion-net-api"
 primary_region = "ord"
 
 [build]

@@ -64,4 +64,4 @@ No auth. No keys. No charge. Santa Claus model — the code is free, the service
 
 ## Live
 
-https://atlas-api-withered-dew-6280.fly.dev/health
+https://clarion-net-api.fly.dev/health

@@ -1,6 +1,6 @@
 # Clarion Net API — Documentation
 
-Base URL: `https://atlas-api-withered-dew-6280.fly.dev`
+Base URL: `https://clarion-net-api.fly.dev`
 
 No authentication required. No rate limits. Free forever.
 
@@ -21,7 +21,7 @@ Check if the API is alive.
 
 **Example:**
 ```bash
-curl https://atlas-api-withered-dew-6280.fly.dev/health
+curl https://clarion-net-api.fly.dev/health
 ```
 
 ---
@@ -60,14 +60,14 @@ Sense a network target. Returns DNS resolution, open TCP ports, and SNMP data if
 
 **Example:**
 ```bash
-curl -X POST https://atlas-api-withered-dew-6280.fly.dev/sense \
+curl -X POST https://clarion-net-api.fly.dev/sense \
   -H "Content-Type: application/json" \
   -d '{"target":"8.8.8.8"}'
 ```
 
 **JavaScript:**
 ```javascript
-const res = await fetch('https://atlas-api-withered-dew-6280.fly.dev/sense', {
+const res = await fetch('https://clarion-net-api.fly.dev/sense', {
   method: 'POST',
   headers: { 'Content-Type': 'application/json' },
   body: JSON.stringify({ target: '8.8.8.8' })
@@ -110,14 +110,14 @@ Shape a JSON object into structured XML.
 
 **Example:**
 ```bash
-curl -X POST https://atlas-api-withered-dew-6280.fly.dev/shape \
+curl -X POST https://clarion-net-api.fly.dev/shape \
   -H "Content-Type: application/json" \
   -d '{"spec":{"name":"test","value":123}}'
 ```
 
 **JavaScript:**
 ```javascript
-const res = await fetch('https://atlas-api-withered-dew-6280.fly.dev/shape', {
+const res = await fetch('https://clarion-net-api.fly.dev/shape', {
   method: 'POST',
   headers: { 'Content-Type': 'application/json' },
   body: JSON.stringify({ spec: { name: 'test', value: 123 } })
@@ -164,14 +164,14 @@ Run a Given/When/Then test using RSpec.
 
 **Example:**
 ```bash
-curl -X POST https://atlas-api-withered-dew-6280.fly.dev/prove \
+curl -X POST https://clarion-net-api.fly.dev/prove \
   -H "Content-Type: application/json" \
   -d '{"given":{"x":"21"},"when":"x * 2","then":"result == 42"}'
 ```
 
 **JavaScript:**
 ```javascript
-const res = await fetch('https://atlas-api-withered-dew-6280.fly.dev/prove', {
+const res = await fetch('https://clarion-net-api.fly.dev/prove', {
   method: 'POST',
   headers: { 'Content-Type': 'application/json' },
   body: JSON.stringify({
@@ -213,7 +213,7 @@ Run the full pipeline: sense → shape → prove. One call.
 
 **Example:**
 ```bash
-curl -X POST https://atlas-api-withered-dew-6280.fly.dev/conduct \
+curl -X POST https://clarion-net-api.fly.dev/conduct \
   -H "Content-Type: application/json" \
   -d '{"target":"8.8.8.8"}'
 ```
