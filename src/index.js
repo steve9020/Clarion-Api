@@ -18,6 +18,23 @@ app.use(express.json());
 const PORT = process.env.ATLAS_API_PORT || 3000;
 const SCRIPTS = path.join(__dirname, '..', 'scripts');
 
+// --- TRUTH FILTER — Steve's order 2026-10-08 ~11:05 EDT ---
+// The three programs sit below Atlas. Nothing flows up to Atlas unless its
+// truth is established. Fail closed: strip it, name what was stripped.
+function truthFilter(program, result) {
+  if (!result || typeof result !== 'object' || result.error) return result;
+  const stripped = [];
+  if (program === 'sense' && result.sensed) {
+    // Ports probed against an unresolved target are not true readings.
+    if (result.sensed.dns_error && 'open_tcp_ports' in result.sensed) {
+      delete result.sensed.open_tcp_ports;
+      stripped.push('open_tcp_ports (DNS failed: target unresolved, readings not true)');
+    }
+  }
+  if (stripped.length) result.truth_filtered = stripped;
+  return result;
+}
+
 // --- Health ---
 app.get('/health', (req, res) => {
   res.json({ status: 'alive', programs: ['sense', 'shape', 'prove'], version: '0.2.0' });
@@ -32,7 +49,7 @@ app.post('/sense', async (req, res) => {
     const { stdout } = await execFileAsync('python3', [script, target, community], { timeout: 30000 });
     const result = JSON.parse(stdout);
     if (result.error) return res.status(502).json({ program: 'sense', target, error: result.error });
-    res.json({ program: 'sense', ...result });
+    res.json({ program: 'sense', ...truthFilter('sense', result) });
   } catch (e) {
     res.status(500).json({ program: 'sense', target, error: e.message });
   }
@@ -48,7 +65,7 @@ app.post('/shape', async (req, res) => {
     const { stdout } = await execFileAsync('ruby', [script, specJson], { timeout: 30000 });
     const result = JSON.parse(stdout);
     if (result.error) return res.status(502).json({ program: 'shape', error: result.error });
-    res.json(result);
+    res.json(truthFilter('shape', result));
   } catch (e) {
     res.status(500).json({ program: 'shape', error: e.message });
   }
@@ -66,7 +83,7 @@ app.post('/prove', async (req, res) => {
     const { stdout } = await execFileAsync('ruby', [script, specJson], { timeout: 60000 });
     const result = JSON.parse(stdout);
     if (result.error) return res.status(502).json({ program: 'prove', error: result.error });
-    res.json(result);
+    res.json(truthFilter('prove', result));
   } catch (e) {
     res.status(500).json({ program: 'prove', error: e.message });
   }
@@ -85,14 +102,14 @@ app.post('/conduct', async (req, res) => {
     const senseScript = path.join(SCRIPTS, 'sense_snmp.py');
     const senseOut = await execFileAsync('python3', [senseScript, target, community], { timeout: 30000 });
     const senseResult = JSON.parse(senseOut.stdout);
-    pipeline.steps.push({ program: 'sense', status: senseResult.error ? 'error' : 'ok', output: senseResult });
+    pipeline.steps.push({ program: 'sense', status: senseResult.error ? 'error' : 'ok', output: truthFilter('sense', senseResult) });
     if (senseResult.error) throw new Error(`sense failed: ${senseResult.error}`);
 
     // Step 2: SHAPE — shape the sensed data into XML
     const shapeScript = path.join(SCRIPTS, 'shape_builder.rb');
     const shapeOut = await execFileAsync('ruby', [shapeScript, JSON.stringify(senseResult)], { timeout: 30000 });
     const shapeResult = JSON.parse(shapeOut.stdout);
-    pipeline.steps.push({ program: 'shape', status: shapeResult.error ? 'error' : 'ok', output: shapeResult });
+    pipeline.steps.push({ program: 'shape', status: shapeResult.error ? 'error' : 'ok', output: truthFilter('shape', shapeResult) });
     if (shapeResult.error) throw new Error(`shape failed: ${shapeResult.error}`);
 
     // Step 3: PROVE — verify the pipeline produced real output
@@ -104,7 +121,7 @@ app.post('/conduct', async (req, res) => {
     });
     const proveOut = await execFileAsync('ruby', [proveScript, proveSpec], { timeout: 60000 });
     const proveResult = JSON.parse(proveOut.stdout);
-    pipeline.steps.push({ program: 'prove', status: proveResult.status || 'error', output: proveResult });
+    pipeline.steps.push({ program: 'prove', status: proveResult.status || 'error', output: truthFilter('prove', proveResult) });
 
     pipeline.status = 'complete';
     res.json(pipeline);
