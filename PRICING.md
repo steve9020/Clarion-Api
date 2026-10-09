@@ -1,54 +1,13 @@
 # Clarion Net API — Pricing
 
-## Free
-**$0/month**
+**Free.**
 
-For hobbyists and open-source projects.
+No tiers. No trials. No payment link. Use the hosted API free. Take the code and run it yourself free (Apache 2.0).
 
-- 1,000 API calls/month
-- Community support (GitHub issues)
-- Self-hosted option (Apache 2.0)
-- All three programs: sense, shape, prove
+In honor of three men who gave their work away free:
 
-[Get Started](https://github.com/steve9020/Clarion-Api)
+- **Terry Davis** — built God's Third Temple alone. 120,000 lines, his own language, his own hymn. Asked nothing.
+- **Jim Weirich** — built the tools the whole world runs on. Gave them away. Asked nothing.
+- **Ilya Etingof** — kept the internet's plumbing honest for twenty years. Asked nothing back.
 
----
-
-## Pro
-**$99/month**
-
-For companies that need reliability.
-
-- 100,000 API calls/month
-- 99.9% uptime SLA
-- Email support (24h response)
-- Usage dashboard
-- All three programs, hosted
-
-[Start Trial](mailto:AntiDriftDrt@proton.me?subject=Clarion%20Net%20API%20Pro)
-
----
-
-## Enterprise
-**Custom**
-
-For teams that need it all.
-
-- Unlimited API calls
-- Dedicated infrastructure
-- Phone support
-- Custom integrations
-- SLA guarantees
-- Onboarding assistance
-
-[Contact Us](mailto:AntiDriftDrt@proton.me?subject=Clarion%20Net%20API%20Enterprise)
-
----
-
-## The Model
-
-Code is free (Apache 2.0). You can self-host forever.
-
-You pay when you want us to run it for you — with uptime guarantees, support, and scale.
-
-Santa Claus model: the gift is free, the house call is separate.
+The gift is free. That's the whole model.
