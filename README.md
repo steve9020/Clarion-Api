@@ -40,7 +40,7 @@ npm test
 ### Health
 ```
 GET /health
-→ { status: "alive", programs: ["sense","shape","prove"], version: "0.2.5" }
+→ { status: "alive", programs: ["sense","shape","prove"], version: "0.3.0" }
 ```
 
 ### Sense
@@ -60,9 +60,12 @@ POST /shape
 ### Prove
 ```
 POST /prove
-{ "path": "path/to/tests" }
-→ { program: "prove", status: "proven", examples: N, failures: 0 }
+{ "given": { "x": 21 },
+  "when": { "op": "mul", "args": [{ "var": "x" }, 2] },
+  "then": { "op": "eq", "args": [{ "var": "result" }, 42] } }
+→ { program: "prove", status: "proven", result: 42 }
 ```
+Data in, verdict out — expression objects, never code.
 
 ## Free forever
 

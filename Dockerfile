@@ -11,9 +11,10 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 # Python: clarion-snmp (Ilya Etingof's pysnmp, keeper's edition)
 RUN pip3 install --no-cache-dir --break-system-packages clarion-snmp
 
-# Ruby: clarion-builder + clarion-given + rspec (for the prove wrapper)
-# rspec-given provides the 'rspec/given' require path used by prove_given.rb
-RUN gem install clarion-builder clarion-given rspec rspec-given
+# Ruby: clarion-builder + clarion-given (the Lazarus programs)
+# prove runs Given/When/Then on a fixed safe op table (scripts/prove_safe.rb) —
+# data in, verdict out, no eval. rspec was the old wrapper's engine; retired 0.3.0.
+RUN gem install clarion-builder clarion-given
 
 WORKDIR /app
 COPY package.json ./

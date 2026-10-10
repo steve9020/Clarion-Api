@@ -15,7 +15,7 @@ Check if the API is alive.
 {
   "status": "alive",
   "programs": ["sense", "shape", "prove"],
-  "version": "0.2.0"
+  "version": "0.3.0"
 }
 ```
 
@@ -130,43 +130,60 @@ console.log(data.xml);
 
 ### POST /prove
 
-Run a Given/When/Then test using RSpec.
+Run a Given/When/Then test. Data in, verdict out — never code.
+
+`given` holds plain JSON data. `when` computes a value from it, `then` asserts
+something about the value (available as `result`). Both are expression objects
+built from a fixed table of safe ops — there is no eval, so raw code is
+rejected with a 400 instead of executed.
+
+| Op | Meaning |
+|----|---------|
+| `add` `sub` `mul` `div` `mod` | arithmetic on numbers |
+| `eq` `ne` `gt` `gte` `lt` `lte` | comparison |
+| `and` `or` `not` | logic |
+| `len` | length of a string, array, or object |
+| `concat` | join strings, or join arrays |
+| `get` | index into an array / key out of an object |
+
+Shapes: a literal (`42`, `"hi"`, `true`), `{"var": "x"}` (a given value, or
+`"result"` inside `then`), or `{"op": "<name>", "args": [...]}`.
 
 **Request:**
 ```json
 {
-  "given": {
-    "x": "21"
-  },
-  "when": "x * 2",
-  "then": "result == 42"
+  "given": { "x": 21 },
+  "when": { "op": "mul", "args": [{ "var": "x" }, 2] },
+  "then": { "op": "eq", "args": [{ "var": "result" }, 42] }
 }
 ```
 
 | Field | Type | Required | Description |
 |-------|------|----------|-------------|
-| given | object | No | Map of variable names to Ruby expressions |
-| when | string | Yes | Ruby expression to evaluate |
-| then | string | Yes | Ruby expression that must be true (can use `result`) |
+| given | object | No | Map of variable names to JSON data values |
+| when | object | Yes | Expression object computing the value under test |
+| then | object | Yes | Assertion object that must hold (can use `{"var":"result"}`) |
 
 **Response:**
 ```json
 {
   "program": "prove",
   "status": "proven",
-  "examples": 1,
-  "failures": 0,
-  "given": { "x": "21" },
-  "when": "x * 2",
-  "then": "result == 42"
+  "result": 42,
+  "given": { "x": 21 },
+  "when": { "op": "mul", "args": [{ "var": "x" }, 2] },
+  "then": { "op": "eq", "args": [{ "var": "result" }, 42] }
 }
 ```
+
+`status` is `"proven"`, `"failed"`, or `"error"` (bad op, unknown variable,
+type mismatch — the error names it).
 
 **Example:**
 ```bash
 curl -X POST https://clarion-net-api.fly.dev/prove \
   -H "Content-Type: application/json" \
-  -d '{"given":{"x":"21"},"when":"x * 2","then":"result == 42"}'
+  -d '{"given":{"x":21},"when":{"op":"mul","args":[{"var":"x"},2]},"then":{"op":"eq","args":[{"var":"result"},42]}}'
 ```
 
 **JavaScript:**
@@ -175,9 +192,9 @@ const res = await fetch('https://clarion-net-api.fly.dev/prove', {
   method: 'POST',
   headers: { 'Content-Type': 'application/json' },
   body: JSON.stringify({
-    given: { x: '21' },
-    when: 'x * 2',
-    then: 'result == 42'
+    given: { x: 21 },
+    when: { op: 'mul', args: [{ var: 'x' }, 2] },
+    then: { op: 'eq', args: [{ var: 'result' }, 42] }
   })
 });
 const data = await res.json();

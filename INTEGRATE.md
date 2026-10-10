@@ -41,5 +41,5 @@ curl -s -X POST https://clarion-net-api.fly.dev/sense -H "Content-Type: applicat
 ## Next steps
 
 - **Shape** your data to XML: `POST /shape` with `{"spec": {...}}`
-- **Prove** it works: `POST /prove` with `{"when": "...", "then": "..."}`
+- **Prove** it works: `POST /prove` with `{"when": {"op":"...","args":[...]}, "then": {"op":"...","args":[...]}}` (expression objects, never code)
 - Full docs: [DOCS.md](DOCS.md)

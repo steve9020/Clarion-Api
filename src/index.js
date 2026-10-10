@@ -63,7 +63,7 @@ function truthAssessment(pipeline) {
 
 // --- Health ---
 app.get('/health', (req, res) => {
-  res.json({ status: 'alive', programs: ['sense', 'shape', 'prove'], version: '0.2.0' });
+  res.json({ status: 'alive', programs: ['sense', 'shape', 'prove'], version: '0.3.0' });
 });
 
 // --- SENSE: query an SNMP agent for system info ---
@@ -97,15 +97,39 @@ app.post('/shape', async (req, res) => {
   }
 });
 
-// --- PROVE: run a Given/When/Then test ---
+// --- PROVE: run a Given/When/Then test over DATA, never code ---
+// Safe edition (0.3.0): given/when/then are JSON data + a fixed op table.
+// There is no code path from Alice input to execution — a Alice who sends
+// Ruby gets a 400, not a shell. See scripts/prove_safe.rb.
+function isJsonData(v) {
+  if (v === null) return true;
+  const t = typeof v;
+  if (t === 'boolean' || t === 'number' || t === 'string') return true;
+  if (Array.isArray(v)) return v.every(isJsonData);
+  if (t === 'object') return Object.values(v).every(isJsonData);
+  return false;
+}
+
 app.post('/prove', async (req, res) => {
-  const { given, when: whenExpr, then: thenExpr } = req.body || {};
-  if (!whenExpr || !thenExpr) {
-    return res.status(400).json({ error: 'when and then required (ruby expressions); given optional (map of var->ruby_expr)' });
+  const { given, when: whenTree, then: thenTree } = req.body || {};
+  if (!whenTree || typeof whenTree !== 'object' || Array.isArray(whenTree)) {
+    return res.status(400).json({ error: 'when required (expression object, e.g. {"op":"mul","args":[{"var":"x"},2]}) — raw code is not accepted' });
+  }
+  if (!thenTree || typeof thenTree !== 'object' || Array.isArray(thenTree)) {
+    return res.status(400).json({ error: 'then required (assertion object, e.g. {"op":"eq","args":[{"var":"result"},42]}) — raw code is not accepted' });
+  }
+  if (given !== undefined && (typeof given !== 'object' || given === null || Array.isArray(given))) {
+    return res.status(400).json({ error: 'given must be an object of data values' });
+  }
+  if (given !== undefined && !isJsonData(given)) {
+    return res.status(400).json({ error: 'given/when/then must be plain JSON data' });
+  }
+  if (![whenTree, thenTree].every(isJsonData)) {
+    return res.status(400).json({ error: 'given/when/then must be plain JSON data' });
   }
   try {
-    const script = path.join(SCRIPTS, 'prove_given.rb');
-    const specJson = JSON.stringify({ given: given || {}, when: whenExpr, then: thenExpr });
+    const script = path.join(SCRIPTS, 'prove_safe.rb');
+    const specJson = JSON.stringify({ given: given || {}, when: whenTree, then: thenTree });
     const { stdout } = await execFileAsync('ruby', [script, specJson], { timeout: 60000 });
     const result = JSON.parse(stdout);
     if (result.error) return res.status(502).json({ program: 'prove', error: result.error });
@@ -139,11 +163,11 @@ app.post('/conduct', async (req, res) => {
     if (shapeResult.error) throw new Error(`shape failed: ${shapeResult.error}`);
 
     // Step 3: PROVE — verify the pipeline produced real output
-    const proveScript = path.join(SCRIPTS, 'prove_given.rb');
+    const proveScript = path.join(SCRIPTS, 'prove_safe.rb');
     const proveSpec = JSON.stringify({
       given: { xml: JSON.stringify(shapeResult.xml || '').slice(0, 200) },
-      when: 'xml.length',
-      then: 'result > 0'
+      when: { op: 'len', args: [{ var: 'xml' }] },
+      then: { op: 'gt', args: [{ var: 'result' }, 0] }
     });
     const proveOut = await execFileAsync('ruby', [proveScript, proveSpec], { timeout: 60000 });
     const proveResult = JSON.parse(proveOut.stdout);

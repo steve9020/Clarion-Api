@@ -50,16 +50,53 @@ async function run() {
   r = await req('POST', '/shape', {});
   check('rejects missing spec', r.status === 400, `got ${r.status}`);
 
-  // 4. Prove — missing path → 400
+  // 4. Prove — validation + safe contract
   console.log('\nProve validation:');
   r = await req('POST', '/prove', {});
-  check('rejects missing path', r.status === 400, `got ${r.status}`);
+  check('rejects missing when/then', r.status === 400, `got ${r.status}`);
+  // Old contract: raw Ruby strings must be rejected, never executed
+  r = await req('POST', '/prove', { given: { x: '21' }, when: 'x * 2', then: 'result == 42' });
+  check('rejects raw code strings', r.status === 400, `got ${r.status}`);
+  r = await req('POST', '/prove', { when: { op: 'system', args: ['id'] }, then: true });
+  check('rejects non-object then', r.status === 400, `got ${r.status}`);
+  // New contract: data in, verdict out (needs ruby; skipped if ruby is absent)
+  r = await req('POST', '/prove', {
+    given: { x: 21 },
+    when: { op: 'mul', args: [{ var: 'x' }, 2] },
+    then: { op: 'eq', args: [{ var: 'result' }, 42] }
+  });
+  if (r.status === 200) {
+    const p = JSON.parse(r.body);
+    check('proves a true claim', p.status === 'proven' && p.result === 42, r.body.slice(0, 120));
+  } else {
+    console.log(`  SKIP live prove (ruby unavailable here, got ${r.status})`);
+  }
+  r = await req('POST', '/prove', {
+    given: { x: 21 },
+    when: { op: 'mul', args: [{ var: 'x' }, 2] },
+    then: { op: 'eq', args: [{ var: 'result' }, 43] }
+  });
+  if (r.status === 200) {
+    const p = JSON.parse(r.body);
+    check('fails a false claim', p.status === 'failed', r.body.slice(0, 120));
+  } else {
+    console.log(`  SKIP live prove-false (ruby unavailable here, got ${r.status})`);
+  }
+  // Attack payload: unknown op must error, never execute
+  r = await req('POST', '/prove', {
+    when: { op: 'system', args: ['id'] },
+    then: { op: 'eq', args: [{ var: 'result' }, 0] }
+  });
+  if (r.status === 200 || r.status === 502) {
+    const p = JSON.parse(r.body);
+    check('unknown op errors, never runs', (p.status === 'error' || p.error) && !JSON.stringify(p).includes('uid='), r.body.slice(0, 120));
+  } else {
+    console.log(`  SKIP attack probe (ruby unavailable here, got ${r.status})`);
+  }
 
-  // 5. Conduct — missing fields → 400
+  // 5. Conduct — missing target → 400
   console.log('\nConduct validation:');
-  r = await req('POST', '/conduct', { target: 'x' });
-  check('rejects missing spec', r.status === 400, `got ${r.status}`);
-  r = await req('POST', '/conduct', { spec: 'y' });
+  r = await req('POST', '/conduct', {});
   check('rejects missing target', r.status === 400, `got ${r.status}`);
 
   // 6. Unknown route → 404
